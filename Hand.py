@@ -17,7 +17,7 @@ class Hand():
         if card == 11:
             self.no_usable_aces += 1
 
-        if self.no_usable_aces > 0 and self.sum > 21:
+        if self.no_usable_aces > 0 and self.sum + card > 21:
             self.sum -= 10
             self.no_usable_aces -= 1
 

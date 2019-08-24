@@ -6,13 +6,16 @@ class BlackJack():
     def __init__(self):
         self.nA = 2
         self.actions = {0:'Stick', 1:'Hit'}
-        self.nS = 19 # Sum of hand from 4 to 21, a hand > 22 is terminal state
+        self.nS = 23*12*2
 
-        self.policy_shape = (19,10,2,self.nA)
-        self.value_shape = (19,10,2)
+        #self.policy_shape = (19,10,2,self.nA)
+        #self.value_shape = (19,10,2)
 
     def deal_card(self):
         return random.randint(2,11)
+
+    def state_to_index(self, state):
+        return state[1] + state[0]*12 + 23*12*(1 if state[2] else 0)
 
     def gen_episode(self, policy):
 
@@ -24,7 +27,9 @@ class BlackJack():
         while True:
 
             state = (player.sum, dealer.hand[0], player.has_usable_ace)
-            action = np.argmax(policy[max(22, state[0])-4][state[1]-2][1 if state[2] else 0])
+            #action_prob = policy[min(22, state[0])][state[1]][1 if state[2] else 0]
+            action_prob = policy[self.state_to_index(state)]
+            action = np.argmax(action_prob) # anything >= 22 is a bust, state 22 is bust state
 
             # Bust
             if player.bust:
@@ -61,8 +66,8 @@ class BlackJack():
 if __name__ == "__main__":
     env = BlackJack()
 
-    policy = np.ones(env.policy_shape) / env.nA
+    policy = np.ones([env.nS, env.nA]) / env.nA
 
     for i in range(1000):
-        #env.gen_episode(policy)
+        env.gen_episode(policy)
         print(env.gen_episode(policy))
