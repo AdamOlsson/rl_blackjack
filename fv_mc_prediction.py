@@ -46,8 +46,6 @@ def play_episode(env):
 if __name__ == "__main__":
     env = gym.make('Blackjack-v0')
 
-    policy = np.zeros([32,11,2])
-
     vfn = first_visit_MC_prediction(env, iterations=500000)
 
     states_0 = np.zeros([32,11])
