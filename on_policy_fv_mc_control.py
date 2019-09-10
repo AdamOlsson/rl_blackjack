@@ -1,43 +1,51 @@
-import gym, collections
-import numpy as np
+import gym, collections, matplotlib
+import numpy as np 
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 
-def on_policy_mc_control(env, policy, gamma=0.1, epsilon=0.2, iterations=1000):
+def on_policy_mc_control(env, policy, gamma=0.1, epsilon=1.0, iterations=1000):
     
-    Q = np.zeros(policy.shape)
+    Q = collections.defaultdict(float)
     state_actions_count = collections.defaultdict(int)
     returns = collections.defaultdict(float)
 
     for itr in range(iterations):
-        episode = play_episode(env, policy, epsilon)
+
+        if itr%1000 == 0:
+            print('Playing episode {} out of {}.'.format(itr, iterations))
+
+        episode = play_episode(env, policy)
         G = 0
 
-        state_actions_in_episode = set([(s, a) for (s,a,r) in episode])
+        # encourage exploration at start
+        epsilon = max(epsilon*0.99995, 0.01)
+
+        state_actions_in_episode = [(s, a) for (s,a,r) in episode]
 
         for t, (state, action, reward) in enumerate(episode):
             G = gamma*G + reward
 
-            if not (state, action) in state_actions_in_episode:
+            if not (state, action) in state_actions_in_episode[0:t]:
                 returns[(state,action)] += G
                 state_actions_count[(state, action)] += 1
-                Q[state[0], state[1], state[2], action] = returns[(state, action)] / state_actions_count[(state, action)]
+                Q[(state,action)] = returns[(state, action)] / state_actions_count[(state, action)]
 
-                most_prob_action = np.argmax(Q[state])
+                best_action = np.argmax([Q[(state, 0)], Q[(state, 1)]])
 
-                for i, a in enumerate(Q[state]):
-                    if a == most_prob_action:
-                        policy[state[0], state[1], int(state[2])][i] = 1 - epsilon + epsilon/len(Q[state])
+                for a in range(env.action_space.n): # enumerate action space
+                    if a == best_action:
+                        policy[state[0], state[1], int(state[2])][a] = 1 - epsilon + epsilon / env.action_space.n
                     else:
-                        policy[state[0], state[1], int(state[2])][i] = epsilon / len(Q[state])
+                        policy[state[0], state[1], int(state[2])][a] = epsilon / env.action_space.n
     return Q, policy
 
-# Selecting action with greed might be wrong
-def play_episode(env, policy, epsilon):
+
+def play_episode(env, policy):
     episode = []
     state = env.reset()
     while True:
-        greedy_action = np.argmax(policy[state[0], state[1], int(state[2])])
-        explore_action = 1 - greedy_action # works in this case when there only are 2 actions
-        action = np.random.choice([greedy_action, explore_action], p=[1 - epsilon - epsilon/len(policy), epsilon/len(policy)])
+        action = np.random.choice(2, p=policy[state[0], state[1], int(state[2])])
         next_state, reward, done, info = env.step(action)
         episode.append((state, action, reward))
         state = next_state
@@ -45,18 +53,42 @@ def play_episode(env, policy, epsilon):
             break
     return episode
 
-# Selecting action with greed might be wrong
-def play_episode2(env, policy):
-    episode = []
-    state = env.reset()
-    while True:
-        action = np.random.choice(2, p=policy[state])
-        next_state, reward, done, info = env.step(action)
-        episode.append((state, action, reward))
-        state = next_state
-        if done:
-            break
-    return episode
+
+def plot_policy(p):
+
+    p_no_ace = p[:,:,0]
+    p_have_ace = p[:,:,1]
+
+    best_policy_no_ace = np.argmax(p_no_ace, axis=2)
+    best_policy_have_ace = np.argmax(p_have_ace, axis=2)
+
+    fig, ax = plt.subplots(ncols=2, figsize=(20, 20))
+    
+    ax1, ax2 = ax
+
+    m1 = ax1.matshow(best_policy_no_ace)
+    m2 = ax2.matshow(best_policy_have_ace)
+
+    xticks = np.arange(11, 22)
+    yticks = np.arange(1, 11)
+    # Show all ticks, remove what rows and columns to not to show
+    ax1.set_yticks(xticks)
+    ax1.set_xticks(yticks)
+    ax2.set_yticks(xticks)
+    ax2.set_xticks(yticks)
+
+    ax1.set_ylabel('Player sum', fontsize=16)
+    ax1.set_xlabel('Dealer showing card', fontsize=16)
+    ax2.set_ylabel('Player sum', fontsize=16)
+    ax2.set_xlabel('Dealer showing card', fontsize=16)
+
+    ax1.set_title('Policy, no usable ace', fontsize=22)
+    ax2.set_title('Policy, with usable ace', fontsize=22)
+
+    fig.colorbar(m1, ax=ax1)
+    fig.colorbar(m2, ax=ax2)
+
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -68,6 +100,6 @@ if __name__ == "__main__":
 
     policy = np.ones(policy_space) / nA # 50/50 policy
 
-    #Q, p = on_policy_mc_control(env, policy)
+    Q, p = on_policy_mc_control(env, policy, iterations=1000000)
 
-    #print(play_episode(env, policy))
+    plot_policy(p)
