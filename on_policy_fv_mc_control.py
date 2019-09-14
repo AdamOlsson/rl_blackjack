@@ -100,6 +100,6 @@ if __name__ == "__main__":
 
     policy = np.ones(policy_space) / nA # 50/50 policy
 
-    Q, p = on_policy_mc_control(env, policy, iterations=1000000)
+    Q, p = on_policy_mc_control(env, policy, iterations=10000000)
 
     plot_policy(p)
