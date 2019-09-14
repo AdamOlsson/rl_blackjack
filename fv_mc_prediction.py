@@ -57,18 +57,18 @@ if __name__ == "__main__":
         else:
             states_0[s0][s1] = v
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(20,20))
     ax0 = fig.add_subplot(1,2,1, projection='3d')
     ax1 = fig.add_subplot(1,2,2, projection='3d')
 
-    ax0.set_title('No Usable Ace')
-    ax1.set_title('Usable Ace')
+    ax0.set_title('No Usable Ace', fontsize=22)
+    ax1.set_title('Usable Ace', fontsize=22)
 
-    ax0.set_xlabel('Sum Player Hand')
-    ax1.set_xlabel('Sum Player Hand')
+    ax0.set_xlabel('Sum Player Hand', fontsize=16)
+    ax1.set_xlabel('Sum Player Hand', fontsize=16)
 
-    ax0.set_ylabel('Dealers Showing Card')
-    ax1.set_ylabel('Dealers Showing Card')
+    ax0.set_ylabel('Dealers Showing Card', fontsize=16)
+    ax1.set_ylabel('Dealers Showing Card', fontsize=16)
 
     x, y = states_0.shape
     X, Y = np.meshgrid(np.arange(x), np.arange(y))
